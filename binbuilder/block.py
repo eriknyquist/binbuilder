@@ -18,7 +18,7 @@ class DataType(object):
 
 class DataTypeInfo(object):
     """
-    Represens all required information about a single atomic datatype
+    Represents all required information about a single atomic datatype
     """
     def __init__(self, datatype, size_bytes, name, pystruct_name, c_name):
         self.datatype = datatype
@@ -80,8 +80,16 @@ class Block(object):
         self.typeinfo = DATATYPES[datatype]
         self.name = name
         self.varname = string_to_varname(name)
-        self.default_value = default_value
+        self.value = default_value
         self.parameter = parameter
+
+    def value_string(self):
+        if self.typeinfo.datatype in [DataType.FLOAT, DataType.DOUBLE]:
+            return f"{self.value:.4f}"
+        elif self.typeinfo.datatype == DataType.BYTES:
+            return " ".join([f"{b:02X}" for b in self.value])
+
+        return str(self.value)
 
     def size_bytes(self):
         if DataType.BYTES == self.typeinfo.datatype:
@@ -108,7 +116,7 @@ class BlockSequence(object):
         lines = []
 
         for block in self.blocklist:
-            valstr = str(block.default_value)
+            valstr = str(block.value)
 
             dtype = block.typeinfo.datatype
 
@@ -117,7 +125,7 @@ class BlockSequence(object):
             elif dtype == DataType.FLOAT:
                 valstr += "f"
             elif dtype == DataType.BYTES:
-                valstr = "{" + ", ".join(f"0x{b:02x}u" for b in block.default_value) + "}"
+                valstr = "{" + ", ".join(f"0x{b:02x}u" for b in block.value) + "}"
 
             lines.append(f"    .{block.varname}={valstr}")
 

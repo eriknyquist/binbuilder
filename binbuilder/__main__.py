@@ -4,6 +4,8 @@ import qdarktheme
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from binbuilder.main_widget import MainWidget
+from binbuilder.dragdrop_table_widget import DragDropTableWidget
 from binbuilder import __version__ as package_version
 
 
@@ -27,13 +29,13 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.iconPath = ICON_PATH
         #self.setWindowIcon(QtGui.QIcon(self.iconPath))
 
-        #self.widget = MainWidget(self.primary_screen, self)
-        #self.setCentralWidget(self.widget)
+        self.widget = MainWidget(self.primary_screen, self)
+        self.setCentralWidget(self.widget)
 
-        #self.quitActdion = QtWidgets.QAction("Quit program", self)
-        #self.quitAction.setShortcut("Ctrl+q")
-        #self.quitAction.setStatusTip("Close the program")
-        #self.quitAction.triggered.connect(self.widget.quit)
+        self.quitAction = QtWidgets.QAction("Quit program", self)
+        self.quitAction.setShortcut("Ctrl+q")
+        self.quitAction.setStatusTip("Close the program")
+        self.quitAction.triggered.connect(self.widget.quit)
 
         self.darkThemeAction = QtWidgets.QAction("Dark theme", self)
         self.darkThemeAction.setShortcut("Ctrl+v")
@@ -44,8 +46,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Build menu bar
         menu = self.menuBar()
-        #fileMenu = menu.addMenu("File")
-        #fileMenu.addAction(self.quitAction)
+        fileMenu = menu.addMenu("File")
+        fileMenu.addAction(self.quitAction)
 
         viewMenu = menu.addMenu("View")
         viewMenu.addAction(self.darkThemeAction)
