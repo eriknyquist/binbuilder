@@ -101,6 +101,7 @@ class Block(object):
             self.value = float(value)
         elif self.typeinfo.datatype == DataType.BYTES:
             self.value = bytes.fromhex(value)
+            self.parameter = len(self.value)
         else:
             self.value = int(value)
 
@@ -114,7 +115,7 @@ class Block(object):
 
     def size_bytes(self):
         if DataType.BYTES == self.typeinfo.datatype:
-            return self.parameter
+            return 0 if self.parameter is None else self.parameter
 
         return self.typeinfo.size_bytes
 

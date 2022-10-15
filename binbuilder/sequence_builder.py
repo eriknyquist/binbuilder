@@ -34,6 +34,7 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.table.setHorizontalHeaderLabels(['Name', 'Type', 'Size', 'Value'])
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        #self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
         self.table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.table.doubleClicked.connect(self.onDoubleClick)
