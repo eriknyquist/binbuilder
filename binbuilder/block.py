@@ -133,8 +133,15 @@ class BlockSequence(object):
                 raise ValueError(f"blocks '{b.name}' and '{existing_name}' result in "
                                  f"the same C variable name, use names that are more different")
 
-        self.name = name
+        self.name = None
+        self.varname = None
+        self.set_name(name)
+
         self.blocklist = blocklist
+
+    def set_name(self, name):
+        self.name = name
+        self.varname = string_to_varname(name)
 
     def _index_by_name(self, name):
         varname = string_to_varname(name)
@@ -149,6 +156,15 @@ class BlockSequence(object):
 
     def remove_block_by_name(self):
         del self.blocklist[self._index_by_name]
+
+    def reorder_by_names(self, names):
+        new_blocklist = []
+        for n in names:
+            # Read block by name from the old list, and
+            # append to the new list in the correct position
+            new_blocklist.append(self.get_block_by_name(n))
+
+        self.blocklist = new_blocklist
 
     def size_bytes(self):
         return sum([b.size_bytes() for b in self.blocklist])
@@ -224,26 +240,33 @@ class Schema(object):
         self.sequencelist.append(sequence)
 
     def generate_c_string(self):
-        ret = "typedef struct\n{\n"
-        for seq in self.sequencelist:
-            ret += seq.generate_c_string()
+        return '\n'.join([s.generate_c_string() for s in self.sequencelist])
 
-        structname = string_to_varname(self.name) + "_t"
+    def generate_pystruct_fmtstring(self):
+        return ''.join([s.generate_pystruct_fmtstring() for s in self.sequencelist])
+
+
+class CodeWriter(object):
+    def __init__(self, big_endian=True):
+        self.big_endian = big_endian
+
+    def generate_c_string(self, obj):
+        ret = "typedef struct\n{\n"
+        ret += obj.generate_c_string()
+
+        structname = string_to_varname(obj.name) + "_t"
         ret += "\n} __attribute__((packed)) " + structname + ";\n"
 
         ret += "\n" + structname + " default = \n{\n"
-        for seq in self.sequencelist:
-            ret += seq.generate_c_defaults()
-
+        ret += obj.generate_c_defaults()
         ret += "\n};"
-        return ret
-
-    def generate_pystruct_fmtstring(self):
-        ret = ">" if self.big_endian else "<"
-        for seq in self.sequencelist:
-            ret += seq.generate_pystruct_fmtstring()
 
         return ret
+
+    def generate_pystruct_fmtstring(self, obj):
+        end = ">" if self.big_endian else "<"
+        return end + obj.generate_pystruct_fmtstring()
+
 
 def main():
     blocks = [

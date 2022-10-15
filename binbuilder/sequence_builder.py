@@ -3,8 +3,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
 from binbuilder.block_builder import BlockBuilderDialog
-from binbuilder.utils import truncate_string
-from binbuilder.block import Block
+from binbuilder.utils import truncate_string, ScrollableTextDisplay
+from binbuilder.block import Block, CodeWriter
 
 
 class SequenceBuilderDialog(QtWidgets.QDialog):
@@ -27,6 +27,15 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.saveButton.clicked.connect(self.saveButtonClicked)
         self.buttonLayout.addWidget(self.saveButton)
 
+        self.cCodeButton = QtWidgets.QPushButton("C code")
+        self.cCodeButton.clicked.connect(self.cCodeButtonClicked)
+        self.buttonLayout.addWidget(self.cCodeButton)
+
+        self.structFmtButton = QtWidgets.QPushButton("python 'struct' format string")
+        self.structFmtButton.clicked.connect(self.structFmtButtonClicked)
+        self.buttonLayout.addWidget(self.structFmtButton)
+
+
         # Build table
         self.table = DragDropTableWidget()
         self.table.setColumnCount(4)
@@ -48,6 +57,24 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
 
         self.update()
+
+    def reorder_sequence_by_table(self):
+        names = []
+        for i in range(self.table.rowCount()):
+            names.append(self.table.item(i, 0).text())
+
+        self.sequence.reorder_by_names(names)
+
+    def cCodeButtonClicked(self):
+        self.reorder_sequence_by_table()
+        writer = CodeWriter()
+
+        dialog = ScrollableTextDisplay(f"C code for '{self.sequence.name}'",
+                                       writer.generate_c_string(self.sequence))
+        dialog.exec_()
+
+    def structFmtButtonClicked(self):
+        self.reorder_sequence_by_table()
 
     def addRow(self, block):
         nextFreeRow = self.table.rowCount()
@@ -81,7 +108,6 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
 
     def update(self):
         self.populateTable()
-        self.table.resizeColumnsToContents()
         self.sizeLabel.setText(f"Total size: {self.sequence.size_bytes()} bytes")
         super(SequenceBuilderDialog, self).update()
 
@@ -91,4 +117,5 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         dialog = BlockBuilderDialog(self, block)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
+        self.reorder_sequence_by_table()
         self.update()
