@@ -2,7 +2,9 @@ from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
+from binbuilder.block_builder import BlockBuilderDialog
 from binbuilder.utils import truncate_string
+from binbuilder.block import Block
 
 
 class SequenceBuilderDialog(QtWidgets.QDialog):
@@ -14,6 +16,8 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.mainLayout = QtWidgets.QVBoxLayout(self)
 
         self.buttonLayout = QtWidgets.QHBoxLayout()
+
+        self.sizeLabel = QtWidgets.QLabel()
 
         self.newButton = QtWidgets.QPushButton("Add new data item")
         self.newButton.clicked.connect(self.newButtonClicked)
@@ -28,11 +32,18 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.table.setColumnCount(4)
         self.table.setWordWrap(False)
         self.table.setHorizontalHeaderLabels(['Name', 'Type', 'Size', 'Value'])
+        self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.table.doubleClicked.connect(self.onDoubleClick)
 
+        self.mainLayout.addWidget(self.sizeLabel)
         self.mainLayout.addLayout(self.buttonLayout)
         self.mainLayout.addWidget(self.table)
         self.setLayout(self.mainLayout)
-        self.setWindowTitle("Data item sequence editor")
+
+        self.setWindowTitle(f"Data item sequence '{self.sequence.name}'")
         #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
 
         self.update()
@@ -60,7 +71,9 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
             self.addRow(block)
 
     def newButtonClicked(self):
-        pass
+        dialog = BlockBuilderDialog(self, Block())
+        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.exec_()
 
     def saveButtonClicked(self):
         pass
@@ -68,11 +81,9 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
     def update(self):
         self.populateTable()
         self.table.resizeColumnsToContents()
+        self.sizeLabel.setText(f"Total size: {self.sequence.size_bytes()} bytes")
         super(SequenceBuilderDialog, self).update()
 
     def onDoubleClick(self, signal):
         item = store_items[signal.row()]
         self.buyItem(item)
-
-    def sizeHint(self):
-        return QtCore.QSize(800, 400)

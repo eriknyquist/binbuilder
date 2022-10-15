@@ -76,10 +76,11 @@ class Block(object):
     """
     Represents a single data field of a particular atomic data type
     """
-    def __init__(self, datatype, name, default_value, parameter=None):
+    def __init__(self, datatype=DataType.UINT_4B, name="", default_value=0, parameter=None, varname_prefix=''):
         self.typeinfo = DATATYPES[datatype]
         self.name = name
-        self.varname = string_to_varname(name)
+        self.varname = varname_prefix + string_to_varname(name)
+        self.varname_prefix = varname_prefix
         self.value = default_value
         self.parameter = parameter
 
@@ -103,13 +104,40 @@ class BlockSequence(object):
     Represents a sequence of data fields, containing multiple Block objects
     """
     def __init__(self, name, blocklist):
+        # Check blocklist for dupe var names
+        names = {}
+        for b in blocklist:
+            if b.varname in names:
+                existing_name = names[b.varname]
+                raise ValueError(f"blocks '{b.name}' and '{existing_name}' result in "
+                                 f"the same C variable name, use names that are more different")
+
         self.name = name
         self.blocklist = blocklist
+
+    def _index_by_name(self, name):
+        varname = string_to_varname(name)
+        for i in range(len(self.blocklist)):
+            if self.blocklist[i].varname == varname:
+                return i
+
+        raise ValueError(f"No such name '{name}'")
+
+    def get_block_by_name(self, name):
+        return self.blocklist[self._index_by_name(name)]
+
+    def remove_block_by_name(self):
+        del self.blocklist[self._index_by_name]
 
     def size_bytes(self):
         return sum([b.size_bytes() for b in self.blocklist])
 
     def add_block(self, block):
+        for b in self.blocklist:
+            if block.varname == b.varname:
+                raise ValueError("This sequence already has a block with the same"
+                                 "C variable name, use a different name")
+
         self.blocklist.append(block)
 
     def generate_c_defaults(self):

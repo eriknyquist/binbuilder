@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5 import QtCore
 from PyQt5.QtGui import QDropEvent
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QTableWidgetItem, QWidget, QHBoxLayout, QApplication
 
@@ -36,8 +36,8 @@ class DragDropTableWidget(QTableWidget):
 
             event.accept()
             for row_index in range(len(rows_to_move)):
-                self.item(drop_row + row_index, 0).setSelected(True)
-                self.item(drop_row + row_index, 1).setSelected(True)
+                for col in range(self.columnCount()):
+                    self.item(drop_row + row_index, col).setSelected(True)
 
         super().dropEvent(event)
 
@@ -58,3 +58,10 @@ class DragDropTableWidget(QTableWidget):
         # noinspection PyTypeChecker
         return rect.contains(pos, True) and not (int(self.model().flags(index)) & Qt.ItemIsDropEnabled) and pos.y() >= rect.center().y()
 
+    def sizeHint(self):
+        horizontal = self.horizontalHeader()
+        vertical = self.verticalHeader()
+        frame = self.frameWidth() * 2
+
+        return QtCore.QSize(horizontal.length() + vertical.width() + frame,
+                            vertical.length() + horizontal.height() + frame)
