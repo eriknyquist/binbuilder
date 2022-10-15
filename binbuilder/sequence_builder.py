@@ -14,8 +14,8 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.parent = parent
         self.sequence = sequence
         self.mainLayout = QtWidgets.QVBoxLayout(self)
-
         self.buttonLayout = QtWidgets.QHBoxLayout()
+        self.tableLayout = QtWidgets.QHBoxLayout()
 
         self.sizeLabel = QtWidgets.QLabel()
 
@@ -33,15 +33,15 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.table.setWordWrap(False)
         self.table.setHorizontalHeaderLabels(['Name', 'Type', 'Size', 'Value'])
         self.table.verticalHeader().setVisible(False)
-        self.table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
         self.table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.table.doubleClicked.connect(self.onDoubleClick)
+        self.tableLayout.addWidget(self.table)
 
         self.mainLayout.addWidget(self.sizeLabel)
         self.mainLayout.addLayout(self.buttonLayout)
-        self.mainLayout.addWidget(self.table)
-        self.setLayout(self.mainLayout)
+        self.mainLayout.addLayout(self.tableLayout)
 
         self.setWindowTitle(f"Data item sequence '{self.sequence.name}'")
         #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
@@ -58,6 +58,7 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         item4 = QtWidgets.QTableWidgetItem(truncate_string(block.value_string()))
 
         item3.setTextAlignment(Qt.AlignHCenter)
+        item3.setTextAlignment(Qt.AlignVCenter)
 
         self.table.setItem(nextFreeRow, 0, item1)
         self.table.setItem(nextFreeRow, 1, item2)
@@ -67,7 +68,6 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
     def populateTable(self):
         self.table.setRowCount(0)
         for block in self.sequence.blocklist:
-            print(block.size_bytes())
             self.addRow(block)
 
     def newButtonClicked(self):
@@ -85,5 +85,9 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         super(SequenceBuilderDialog, self).update()
 
     def onDoubleClick(self, signal):
-        item = store_items[signal.row()]
-        self.buyItem(item)
+        block_name = self.table.item(signal.row(), 0).text()
+        block = self.sequence.get_block_by_name(block_name)
+        dialog = BlockBuilderDialog(self, block)
+        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.exec_()
+        self.update()

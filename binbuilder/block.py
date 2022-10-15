@@ -77,12 +77,32 @@ class Block(object):
     Represents a single data field of a particular atomic data type
     """
     def __init__(self, datatype=DataType.UINT_4B, name="", default_value=0, parameter=None, varname_prefix=''):
-        self.typeinfo = DATATYPES[datatype]
-        self.name = name
-        self.varname = varname_prefix + string_to_varname(name)
+        self.typeinfo = None
+        self.set_type(datatype)
+
+        self.name = None
+        self.varname = None
+        self.varname_prefix = varname_prefix
+        self.set_name(name)
+
         self.varname_prefix = varname_prefix
         self.value = default_value
         self.parameter = parameter
+
+    def set_name(self, name):
+        self.name = name
+        self.varname = self.varname_prefix + string_to_varname(name)
+
+    def set_type(self, datatype):
+        self.typeinfo = DATATYPES[datatype]
+
+    def set_value_string(self, value):
+        if self.typeinfo.datatype in [DataType.FLOAT, DataType.DOUBLE]:
+            self.value = float(value)
+        elif self.typeinfo.datatype == DataType.BYTES:
+            self.value = bytes.fromhex(value)
+        else:
+            self.value = int(value)
 
     def value_string(self):
         if self.typeinfo.datatype in [DataType.FLOAT, DataType.DOUBLE]:

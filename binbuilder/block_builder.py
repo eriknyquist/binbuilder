@@ -9,15 +9,18 @@ from binbuilder.block import DataType, DATATYPES
 type_name_map = {DATATYPES[code].name: code for code in DATATYPES}
 
 
+def clean_bin_str(s):
+    return ''.join([i.strip() for i in s.split()])
+
 def bin_str_len(s):
-    clean_str = ''.join([i.strip() for i in s.split()])
-    return int(len(clean_str) / 2)
+    return int(len(clean_bin_str(s)) / 2)
 
 
 class BlockBuilderDialog(QtWidgets.QDialog):
     def __init__(self, parent, block):
         super(BlockBuilderDialog, self).__init__(parent)
 
+        self.old_type = None
         self.parent = parent
         self.block = block
         self.mainLayout = QtWidgets.QVBoxLayout(self)
@@ -28,33 +31,34 @@ class BlockBuilderDialog(QtWidgets.QDialog):
 
         self.type_is_bytes = block.typeinfo.datatype == DataType.BYTES
 
-        self.nameLayout = QtWidgets.QHBoxLayout(self)
-        self.nameInput = QtWidgets.QLineEdit(self)
-        self.nameLabel = QtWidgets.QLabel(self)
+        self.nameLayout = QtWidgets.QHBoxLayout()
+        self.nameInput = QtWidgets.QLineEdit()
+        self.nameLabel = QtWidgets.QLabel()
         self.nameLabel.setText("Name: ")
         self.nameInput.setText(block.name)
         self.nameLayout.addWidget(self.nameLabel)
         self.nameLayout.addWidget(self.nameInput)
 
-        self.valueLayout = QtWidgets.QHBoxLayout(self)
-        self.valueInput = QtWidgets.QLineEdit(self)
+        self.sizeLabel = QtWidgets.QLabel(self)
+
+        self.valueLayout = QtWidgets.QHBoxLayout()
+        self.valueInput = QtWidgets.QLineEdit()
         self.valueInput.textChanged.connect(self.value_input_changed)
-        self.valueLabel = QtWidgets.QLabel(self)
+        self.valueLabel = QtWidgets.QLabel()
         self.valueLabel.setText("Value: ")
         self.valueInput.setText(block.value_string())
         self.valueLayout.addWidget(self.valueLabel)
         self.valueLayout.addWidget(self.valueInput)
 
-        self.sizeLabel = QtWidgets.QLabel(self)
         self.set_size_label(block.typeinfo.name)
 
-        self.typeLayout = QtWidgets.QHBoxLayout(self)
-        self.typeCombo = QtWidgets.QComboBox(self)
-        self.typeCombo.currentTextChanged.connect(self.datatype_changed)
+        self.typeLayout = QtWidgets.QHBoxLayout()
+        self.typeCombo = QtWidgets.QComboBox()
         self.typeCombo.addItems(type_name_map.keys())
         self.typeLabel = QtWidgets.QLabel(self)
         self.typeLabel.setText("Data type: ")
         self.typeCombo.setCurrentText(block.typeinfo.name)
+        self.typeCombo.currentTextChanged.connect(self.datatype_changed)
         self.set_value_validator_for_type(block.typeinfo.name)
         self.typeLayout.addWidget(self.typeLabel)
         self.typeLayout.addWidget(self.typeCombo)
@@ -63,12 +67,16 @@ class BlockBuilderDialog(QtWidgets.QDialog):
         self.mainLayout.addLayout(self.typeLayout)
         self.mainLayout.addLayout(self.valueLayout)
         self.mainLayout.addWidget(self.sizeLabel)
-        self.setLayout(self.mainLayout)
 
         self.setWindowTitle(f"Data block editor")
         #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
 
         self.update()
+
+    def closeEvent(self, event):
+        self.block.set_name(self.nameInput.text())
+        self.block.set_type(type_name_map[self.typeCombo.currentText()])
+        self.block.set_value_string(self.valueInput.text())
 
     def value_input_changed(self, value):
         if self.type_is_bytes:
@@ -94,6 +102,14 @@ class BlockBuilderDialog(QtWidgets.QDialog):
             self.valueInput.setValidator(self.decimal_validator)
 
     def datatype_changed(self, typename):
+        new_type = type_name_map[typename]
+
         self.set_value_validator_for_type(typename)
         self.set_size_label(typename)
-        self.type_is_bytes = type_name_map[typename] == DataType.BYTES
+        self.type_is_bytes = new_type == DataType.BYTES
+
+        if self.old_type != new_type:
+            self.valueInput.setText('')
+
+        self.old_type = new_type
+
