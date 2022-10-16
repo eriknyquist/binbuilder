@@ -43,8 +43,6 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.table.setHorizontalHeaderLabels(['Name', 'Type', 'Size', 'Value'])
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        #self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
         self.table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.table.doubleClicked.connect(self.onDoubleClick)
         self.tableLayout.addWidget(self.table)
@@ -68,13 +66,16 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
     def cCodeButtonClicked(self):
         self.reorder_sequence_by_table()
         writer = CodeWriter()
-
         dialog = ScrollableTextDisplay(f"C code for '{self.sequence.name}'",
                                        writer.generate_c_string(self.sequence))
         dialog.exec_()
 
     def structFmtButtonClicked(self):
         self.reorder_sequence_by_table()
+        writer = CodeWriter()
+        dialog = ScrollableTextDisplay(f"python struct format string for '{self.sequence.name}'",
+                                       writer.generate_pystruct_fmtstring(self.sequence))
+        dialog.exec_()
 
     def addRow(self, block):
         nextFreeRow = self.table.rowCount()

@@ -1,3 +1,8 @@
+import base64
+import struct
+
+from versionedobj import CustomValue
+
 
 class DataType(object):
     """
@@ -26,6 +31,13 @@ class DataTypeInfo(object):
         self.name = name
         self.pystruct_name = pystruct_name
         self.c_name = c_name
+
+    def __str__(self):
+        return (f"{self.__class__.__name__}({self.datatype}, {self.size_bytes}, "
+                f"{self.name}, {self.pystruct_name}, {self.c_name})")
+
+    def __repr__(self):
+        return __str__()
 
 
 # Mapping of DataType enum values to DataTypeInfo objects
@@ -119,12 +131,42 @@ class Block(object):
 
         return self.typeinfo.size_bytes
 
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.name}, {self.value}, {self.typeinfo.datatype}, {self.parameter})"
+
+    def __repr__(self):
+        return self.__str__()
+
+    def to_dict(self):
+        if DataType.BYTES == self.typeinfo.datatype:
+            value = base64.b64encode(self.value).decode('UTF-8')
+        else:
+            value = self.value
+
+        return {"type": self.typeinfo.datatype, "name": self.name,
+                "var_prefix": self.varname_prefix, "value": value}
+
+    @classmethod
+    def from_dict(cls, attrs):
+        datatype = attrs["type"]
+        name = attrs["name"]
+        var_prefix = attrs["var_prefix"]
+        value = attrs["value"]
+
+        if DataType.BYTES == datatype:
+            value = base64.b64decode(bytes.from_string(value, 'UTF-8'))
+            param = len(value)
+        else:
+            param = None
+
+        return Block(datatype, name, value, parameter=param, varname_prefix=var_prefix)
+
 
 class BlockSequence(object):
     """
     Represents a sequence of data fields, containing multiple Block objects
     """
-    def __init__(self, name, blocklist):
+    def __init__(self, name, blocklist=[]):
         # Check blocklist for dupe var names
         names = {}
         for b in blocklist:
@@ -138,6 +180,15 @@ class BlockSequence(object):
         self.set_name(name)
 
         self.blocklist = blocklist
+
+    def to_dict(self):
+        return {"name": self.name, "blocks": [b.to_dict() for b in self.blocklist]}
+
+    @classmethod
+    def from_dict(cls, attrs):
+        name = attrs["name"]
+        blocks = [Block.from_dict(d) for d in attrs["blocks"]]
+        return BlockSequence(name, blocks)
 
     def set_name(self, name):
         self.name = name
@@ -233,6 +284,17 @@ class Schema(object):
         self.sequencelist = sequencelist
         self.big_endian = big_endian
 
+    def to_dict(self):
+        return {"name": self.name, "big_endian": self.big_endian,
+                "sequences": [s.to_dict() for s in self.sequencelist]}
+
+    @classmethod
+    def from_dict(cls, attrs):
+        name = attrs["name"]
+        big_endian = attrs["big_endian"]
+        sequences = [BlockSequence.from_dict(d) for d in attrs["sequences"]]
+        return Schema(name, sequencelist=sequences, big_endian=big_endian)
+
     def size_bytes(self):
         return sum([s.size_bytes() for s in self.sequencelist])
 
@@ -269,19 +331,13 @@ class CodeWriter(object):
 
 
 def main():
-    blocks = [
-        Block(DataType.UINT_4B, "First Counter", 44),
-        Block(DataType.UINT_4B, "Second Counter", 55),
-        Block(DataType.DOUBLE, "THIRD,,::;;COUNTER", 55.5),
-        Block(DataType.FLOAT, "fourth,  COUNTER", 55.5),
-        Block(DataType.BYTES, "Auth. Token", b'ffff', 4),
-        Block(DataType.BYTES, "AUTHKEY", b'ffffgggghhhhjjjj', 12)
-    ]
+    b = Block(DataType.UINT_4B, "First Counter", 44)
 
-    schema = Schema("Test Sequence", sequencelist=[BlockSequence("test", blocks)])
-    print(schema.generate_pystruct_fmtstring())
-    print(schema.generate_c_string())
-    print(schema.size_bytes())
+    s = b.to_dict()
+    b2 = Block.from_dict(s)
+
+    print(b)
+    print(b2)
 
 if __name__ == "__main__":
     main()
