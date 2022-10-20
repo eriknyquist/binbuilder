@@ -19,6 +19,14 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
 
         self.sizeLabel = QtWidgets.QLabel()
 
+        self.nameLayout = QtWidgets.QHBoxLayout()
+        self.nameInput = QtWidgets.QLineEdit()
+        self.nameLabel = QtWidgets.QLabel()
+        self.nameLabel.setText("Sequence name: ")
+        self.nameInput.setText(sequence.name)
+        self.nameLayout.addWidget(self.nameLabel)
+        self.nameLayout.addWidget(self.nameInput)
+
         self.newButton = QtWidgets.QPushButton("Add new data item")
         self.newButton.clicked.connect(self.newButtonClicked)
         self.buttonLayout.addWidget(self.newButton)
@@ -47,8 +55,9 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.table.doubleClicked.connect(self.onDoubleClick)
         self.tableLayout.addWidget(self.table)
 
-        self.mainLayout.addWidget(self.sizeLabel)
+        self.mainLayout.addLayout(self.nameLayout)
         self.mainLayout.addLayout(self.buttonLayout)
+        self.mainLayout.addWidget(self.sizeLabel)
         self.mainLayout.addLayout(self.tableLayout)
 
         self.setWindowTitle(f"Data item sequence '{self.sequence.name}'")
@@ -100,9 +109,12 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
             self.addRow(block)
 
     def newButtonClicked(self):
-        dialog = BlockBuilderDialog(self, Block())
+        new = Block(name=f"Block {len(self.sequence.blocklist)}")
+        dialog = BlockBuilderDialog(self, new)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
+        self.sequence.add_block(new)
+        self.update()
 
     def saveButtonClicked(self):
         pass
@@ -118,5 +130,20 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         dialog = BlockBuilderDialog(self, block)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
-        self.reorder_sequence_by_table()
+
+        new_name = dialog.block.name
+
+        #print(self.sequence.blocklist)
+        #try:
+        #    self.sequence.remove_block_by_name(block_name)
+        #except ValueError:
+        #    pass
+        #print(self.sequence.blocklist)
+
+        #try:
+        #    self.sequence.add_block(block)
+        #except ValueError:
+        #    pass
+
         self.update()
+        self.reorder_sequence_by_table()
