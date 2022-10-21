@@ -30,3 +30,15 @@ class ScrollableTextDisplay(QtWidgets.QDialog):
 
     def sizeHint(self):
         return QtCore.QSize(600, 400)
+
+
+def errorDialog(parent, heading="Error", message="Unrecoverable error occurred"):
+    msg = QtWidgets.QMessageBox(parent)
+    msg.setIcon(QtWidgets.QMessageBox.Critical)
+    msg.setText(heading)
+    msg.setInformativeText(message)
+    msg.setWindowTitle("Error")
+    #msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+    msg.exec_()
+

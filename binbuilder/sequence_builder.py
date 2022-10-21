@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
 from binbuilder.block_builder import BlockBuilderDialog
-from binbuilder.utils import truncate_string, ScrollableTextDisplay
+from binbuilder.utils import truncate_string, ScrollableTextDisplay, errorDialog
 from binbuilder.block import Block, CodeWriter
 
 
@@ -65,6 +65,9 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
 
         self.update()
 
+    def closeEvent(self, event):
+        self.sequence.set_name(self.nameInput.text())
+
     def reorder_sequence_by_table(self):
         names = []
         for i in range(self.table.rowCount()):
@@ -110,10 +113,20 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
 
     def newButtonClicked(self):
         new = Block(name=f"Block {len(self.sequence.blocklist)}")
-        dialog = BlockBuilderDialog(self, new)
-        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        dialog.exec_()
-        self.sequence.add_block(new)
+        success = False
+
+        while not success:
+            dialog = BlockBuilderDialog(self, new)
+            dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+            dialog.exec_()
+
+            try:
+                self.sequence.add_block(new)
+            except ValueError as e:
+                errorDialog(self, message=str(e))
+            else:
+                success = True
+
         self.update()
 
     def saveButtonClicked(self):
@@ -122,6 +135,7 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
     def update(self):
         self.populateTable()
         self.sizeLabel.setText(f"Total size: {self.sequence.size_bytes()} bytes")
+        self.reorder_sequence_by_table()
         super(SequenceBuilderDialog, self).update()
 
     def onDoubleClick(self, signal):
@@ -130,20 +144,4 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         dialog = BlockBuilderDialog(self, block)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
-
-        new_name = dialog.block.name
-
-        #print(self.sequence.blocklist)
-        #try:
-        #    self.sequence.remove_block_by_name(block_name)
-        #except ValueError:
-        #    pass
-        #print(self.sequence.blocklist)
-
-        #try:
-        #    self.sequence.add_block(block)
-        #except ValueError:
-        #    pass
-
         self.update()
-        self.reorder_sequence_by_table()

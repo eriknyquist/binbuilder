@@ -37,6 +37,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.quitAction.setStatusTip("Close the program")
         self.quitAction.triggered.connect(self.widget.quit)
 
+        self.saveSchemaAction = QtWidgets.QAction("Save schema", self)
+        self.saveSchemaAction.setShortcut("Ctrl+s")
+        self.saveSchemaAction.setStatusTip("Save the current schema to a file")
+        self.saveSchemaAction.triggered.connect(self.widget.saveSchema)
+
+        self.loadSchemaAction = QtWidgets.QAction("Load schema", self)
+        self.loadSchemaAction.setShortcut("Ctrl+o")
+        self.loadSchemaAction.setStatusTip("Load saved schema from a file")
+        self.loadSchemaAction.triggered.connect(self.widget.loadSchema)
+
         self.darkThemeAction = QtWidgets.QAction("Dark theme", self)
         self.darkThemeAction.setShortcut("Ctrl+v")
         self.darkThemeAction.setStatusTip("Enable/disable dark theme")
@@ -47,6 +57,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Build menu bar
         menu = self.menuBar()
         fileMenu = menu.addMenu("File")
+        fileMenu.addAction(self.saveSchemaAction)
+        fileMenu.addAction(self.loadSchemaAction)
         fileMenu.addAction(self.quitAction)
 
         viewMenu = menu.addMenu("View")

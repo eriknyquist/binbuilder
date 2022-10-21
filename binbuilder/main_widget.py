@@ -3,9 +3,14 @@ import os
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
 from binbuilder.block import Block, BlockSequence, DataType, Schema
 from binbuilder.sequence_builder import SequenceBuilderDialog
-from binbuilder.utils import truncate_string
+from binbuilder.utils import truncate_string, errorDialog
+from binbuilder.save_file import SavedSchema
+
+from versionedobj import Serializer
+
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+
 
 blocks1 = [
     Block(DataType.UINT_4B, "First Counter", 44),
@@ -61,12 +66,50 @@ class MainWidget(QtWidgets.QDialog):
 
         self.update()
 
+    def saveSchema(self):
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Select save file", "", "All Files (*)", options=options)
+        if not filename:
+            return
+
+        saved_schema = SavedSchema()
+        saved_schema.schema_data = self.current_schema
+        serializer = Serializer()
+        serializer.to_file(saved_schema, filename)
+
+    def loadSchema(self):
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select schema file to load", "", "All Files (*)", options=options)
+        if not filename:
+            return
+
+        loaded_schema = SavedSchema()
+        loaded_schema.schema_data = self.current_schema
+        loaded_schema.schema_data.sequencelist = []
+
+        serializer = Serializer()
+        serializer.from_file(loaded_schema, filename)
+        self.current_schema = loaded_schema.schema_data
+        self.update()
+
     def newButtonClicked(self):
         new = BlockSequence(f"New sequence {len(self.current_schema.sequencelist)}")
-        dialog = SequenceBuilderDialog(self, new)
-        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        dialog.exec_()
-        self.current_schema.add_sequence(new)
+        success = False
+
+        while not success:
+            dialog = SequenceBuilderDialog(self, new)
+            dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+            dialog.exec_()
+
+            try:
+                self.current_schema.add_sequence(new)
+            except ValueError as e:
+                errorDialog(self, message=str(e))
+            else:
+                success = True
+
         self.update()
 
     def reorder_schema_by_table(self):
@@ -97,6 +140,7 @@ class MainWidget(QtWidgets.QDialog):
     def update(self):
         self.populateTable()
         self.sizeLabel.setText(f"Total size: {self.current_schema.size_bytes()} bytes")
+        self.reorder_schema_by_table()
         super(MainWidget, self).update()
 
     def onDoubleClick(self, signal):
@@ -105,7 +149,6 @@ class MainWidget(QtWidgets.QDialog):
         dialog = SequenceBuilderDialog(self, seq)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
-        self.reorder_schema_by_table()
         self.update()
 
     def warningBeforeQuit(self):

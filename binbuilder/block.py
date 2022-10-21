@@ -154,7 +154,7 @@ class Block(object):
         value = attrs["value"]
 
         if DataType.BYTES == datatype:
-            value = base64.b64decode(bytes.from_string(value, 'UTF-8'))
+            value = base64.b64decode(bytes(value, 'UTF-8'))
             param = len(value)
         else:
             param = None
@@ -173,13 +173,13 @@ class BlockSequence(object):
             if b.varname in names:
                 existing_name = names[b.varname]
                 raise ValueError(f"blocks '{b.name}' and '{existing_name}' result in "
-                                 f"the same C variable name, use names that are more different")
+                                 f"the same C variable name, please use names that are more different")
+
+        self.blocklist = blocklist
 
         self.name = None
         self.varname = None
         self.set_name(name)
-
-        self.blocklist = blocklist
 
     def to_dict(self):
         return {"name": self.name, "blocks": [b.to_dict() for b in self.blocklist]}
@@ -202,6 +202,14 @@ class BlockSequence(object):
 
         raise ValueError(f"No such name '{name}'")
 
+    def __contains__(self, name):
+        try:
+            _ = self._index_by_name(name)
+        except ValueError:
+            return False
+
+        return True
+
     def get_block_by_name(self, name):
         return self.blocklist[self._index_by_name(name)]
 
@@ -213,10 +221,7 @@ class BlockSequence(object):
         for n in names:
             # Read block by name from the old list, and
             # append to the new list in the correct position
-            try:
-                new_blocklist.append(self.get_block_by_name(n))
-            except ValueError:
-                pass
+            new_blocklist.append(self.get_block_by_name(n))
 
         self.blocklist = new_blocklist
 
@@ -228,7 +233,7 @@ class BlockSequence(object):
             if block.varname == b.varname:
                 print(f"{block.varname} {b.varname}")
                 raise ValueError("This sequence already has a block with the same "
-                                 "C variable name, use a different name")
+                                 "C variable name, please use a different name")
 
         self.blocklist.append(block)
 
@@ -279,7 +284,7 @@ class BlockSequence(object):
         return ret
 
 
-class Schema(object):
+class Schema(CustomValue):
     """
     Represents a schema for a binary file, containing multiple BlockSequence objects
     """
@@ -300,12 +305,16 @@ class Schema(object):
         return {"name": self.name, "big_endian": self.big_endian,
                 "sequences": [s.to_dict() for s in self.sequencelist]}
 
-    @classmethod
-    def from_dict(cls, attrs):
+    def from_dict(self, attrs):
         name = attrs["name"]
         big_endian = attrs["big_endian"]
         sequences = [BlockSequence.from_dict(d) for d in attrs["sequences"]]
-        return Schema(name, sequencelist=sequences, big_endian=big_endian)
+
+        self.set_name(name)
+        self.big_endian = big_endian
+
+        for s in sequences:
+            self.add_sequence(s)
 
     def set_name(self, name):
         self.name = name
@@ -318,6 +327,14 @@ class Schema(object):
                 return i
 
         raise ValueError(f"No such sequence name '{name}'")
+
+    def __contains__(self, name):
+        try:
+            _ = self._index_by_name(name)
+        except ValueError:
+            return False
+
+        return True
 
     def get_sequence_by_name(self, name):
         return self.sequencelist[self._index_by_name(name)]
@@ -338,6 +355,12 @@ class Schema(object):
         return sum([s.size_bytes() for s in self.sequencelist])
 
     def add_sequence(self, sequence):
+        for s in self.sequencelist:
+            if sequence.varname == s.varname:
+                print(f"{sequence.varname} {s.varname}")
+                raise ValueError("This schema already has a sequence with the same "
+                                 "C variable name, please use a different name")
+
         self.sequencelist.append(sequence)
 
     def generate_c_string(self):
