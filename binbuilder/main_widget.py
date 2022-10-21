@@ -43,11 +43,25 @@ class MainWidget(QtWidgets.QDialog):
 
         self.sizeLabel = QtWidgets.QLabel()
 
-        # Build button widgets for button layout
+        # Build top button bar layout
         self.buttonLayout = QtWidgets.QHBoxLayout()
-        self.newButton = QtWidgets.QPushButton("Create new data item sequence")
+
+        self.newButton = QtWidgets.QPushButton("Add new sequence")
         self.newButton.clicked.connect(self.newButtonClicked)
         self.buttonLayout.addWidget(self.newButton)
+
+        self.editButton = QtWidgets.QPushButton("Edit selected")
+        self.editButton.clicked.connect(self.editButtonClicked)
+        self.buttonLayout.addWidget(self.editButton)
+
+        self.removeButton = QtWidgets.QPushButton("Delete selected")
+        self.removeButton.clicked.connect(self.removeButtonClicked)
+        self.buttonLayout.addWidget(self.removeButton)
+
+        self.endiannessCheckbox = QtWidgets.QCheckBox("Big-endian")
+        self.endiannessCheckbox.setChecked(True)
+        self.endiannessCheckbox.toggled.connect(self.onEndiannessChange)
+        self.buttonLayout.addWidget(self.endiannessCheckbox)
 
         # Build schema builder table widget
         self.table = DragDropTableWidget()
@@ -66,12 +80,20 @@ class MainWidget(QtWidgets.QDialog):
 
         self.update()
 
+    def onEndiannessChange(self):
+        self.current_schema.big_endian = self.endiannessCheckbox.isChecked()
+
     def saveSchema(self):
+        self.reorder_schema_by_table()
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.DontUseNativeDialog
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Select save file", "", "All Files (*)", options=options)
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Select save file", "",
+                                                            "BinBuilder Schema files (*.bschema)", options=options)
         if not filename:
             return
+
+        if not filename.endswith(".bschema"):
+            filename = os.path.splitext(filename)[0] + ".bschema"
 
         saved_schema = SavedSchema()
         saved_schema.schema_data = self.current_schema
@@ -81,7 +103,8 @@ class MainWidget(QtWidgets.QDialog):
     def loadSchema(self):
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.DontUseNativeDialog
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select schema file to load", "", "All Files (*)", options=options)
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select save file", "",
+                                                            "BinBuilder Schema files (*.bschema)", options=options)
         if not filename:
             return
 
@@ -110,6 +133,25 @@ class MainWidget(QtWidgets.QDialog):
             else:
                 success = True
 
+        self.update()
+
+    def editButtonClicked(self):
+        rows = self.table.selectionModel().selectedRows()
+        if not rows:
+            errorDialog(self, message="No sequence is selected")
+            return
+
+        self.editSequenceByRow(rows[0].row())
+        self.update()
+
+    def removeButtonClicked(self):
+        rows = self.table.selectionModel().selectedRows()
+        if not rows:
+            errorDialog(self, message="No sequence is selected")
+            return
+
+        seq_name = self.table.item(rows[0].row(), 0).text()
+        self.current_schema.remove_sequence_by_name(seq_name)
         self.update()
 
     def reorder_schema_by_table(self):
@@ -141,14 +183,18 @@ class MainWidget(QtWidgets.QDialog):
         self.populateTable()
         self.sizeLabel.setText(f"Total size: {self.current_schema.size_bytes()} bytes")
         self.reorder_schema_by_table()
+        self.endiannessCheckbox.setChecked(self.current_schema.big_endian)
         super(MainWidget, self).update()
 
-    def onDoubleClick(self, signal):
-        seq_name = self.table.item(signal.row(), 0).text()
+    def editSequenceByRow(self, row):
+        seq_name = self.table.item(row, 0).text()
         seq = self.current_schema.get_sequence_by_name(seq_name)
         dialog = SequenceBuilderDialog(self, seq)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
+        
+    def onDoubleClick(self, signal):
+        self.editSequenceByRow(signal.row())
         self.update()
 
     def warningBeforeQuit(self):

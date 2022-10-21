@@ -339,8 +339,8 @@ class Schema(CustomValue):
     def get_sequence_by_name(self, name):
         return self.sequencelist[self._index_by_name(name)]
 
-    def remove_sequence_by_name(self):
-        del self.sequencelist[self._index_by_name]
+    def remove_sequence_by_name(self, name):
+        del self.sequencelist[self._index_by_name(name)]
 
     def reorder_by_names(self, names):
         new_seqlist = []

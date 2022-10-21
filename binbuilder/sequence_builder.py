@@ -27,9 +27,17 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.nameLayout.addWidget(self.nameLabel)
         self.nameLayout.addWidget(self.nameInput)
 
-        self.newButton = QtWidgets.QPushButton("Add new data item")
+        self.newButton = QtWidgets.QPushButton("Add new item")
         self.newButton.clicked.connect(self.newButtonClicked)
         self.buttonLayout.addWidget(self.newButton)
+
+        self.editButton = QtWidgets.QPushButton("Edit selected")
+        self.editButton.clicked.connect(self.editButtonClicked)
+        self.buttonLayout.addWidget(self.editButton)
+
+        self.removeButton = QtWidgets.QPushButton("Delete selected")
+        self.removeButton.clicked.connect(self.removeButtonClicked)
+        self.buttonLayout.addWidget(self.removeButton)
 
         self.saveButton = QtWidgets.QPushButton("Save sequence")
         self.saveButton.clicked.connect(self.saveButtonClicked)
@@ -39,7 +47,7 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.cCodeButton.clicked.connect(self.cCodeButtonClicked)
         self.buttonLayout.addWidget(self.cCodeButton)
 
-        self.structFmtButton = QtWidgets.QPushButton("python 'struct' format string")
+        self.structFmtButton = QtWidgets.QPushButton("python format string")
         self.structFmtButton.clicked.connect(self.structFmtButtonClicked)
         self.buttonLayout.addWidget(self.structFmtButton)
 
@@ -63,6 +71,25 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.setWindowTitle(f"Data item sequence '{self.sequence.name}'")
         #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
 
+        self.update()
+
+    def removeButtonClicked(self):
+        rows = self.table.selectionModel().selectedRows()
+        if not rows:
+            errorDialog(self, message="No data item is selected")
+            return
+
+        block_name = self.table.item(rows[0].row(), 0).text()
+        self.sequence.remove_block_by_name(block_name)
+        self.update()
+
+    def editButtonClicked(self):
+        rows = self.table.selectionModel().selectedRows()
+        if not rows:
+            errorDialog(self, message="No data item is selected")
+            return
+
+        self.editItemByRow(rows[0].row())
         self.update()
 
     def closeEvent(self, event):
@@ -138,10 +165,13 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.reorder_sequence_by_table()
         super(SequenceBuilderDialog, self).update()
 
-    def onDoubleClick(self, signal):
-        block_name = self.table.item(signal.row(), 0).text()
+    def editItemByRow(self, row):
+        block_name = self.table.item(row, 0).text()
         block = self.sequence.get_block_by_name(block_name)
         dialog = BlockBuilderDialog(self, block)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
+
+    def onDoubleClick(self, signal):
+        self.editItemByRow(signal.row())
         self.update()
