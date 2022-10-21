@@ -3,7 +3,7 @@ import os
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
 from binbuilder.block import Block, BlockSequence, DataType, Schema
 from binbuilder.sequence_builder import SequenceBuilderDialog
-from binbuilder.utils import truncate_string, errorDialog
+from binbuilder.utils import truncate_string, errorDialog, yesNoDialog
 from binbuilder.save_file import SavedSchema
 
 from versionedobj import Serializer
@@ -79,6 +79,13 @@ class MainWidget(QtWidgets.QDialog):
         self.mainLayout.addWidget(self.table)
 
         self.update()
+
+    def warningBeforeQuit(self):
+        return yesNoDialog(self, "Are you sure?", "Are you sure you want to quit?")
+
+    def quit(self):
+        if self.warningBeforeQuit():
+            QtWidgets.qApp.quit()
 
     def onEndiannessChange(self):
         self.current_schema.big_endian = self.endiannessCheckbox.isChecked()
@@ -196,13 +203,6 @@ class MainWidget(QtWidgets.QDialog):
     def onDoubleClick(self, signal):
         self.editSequenceByRow(signal.row())
         self.update()
-
-    def warningBeforeQuit(self):
-        return yesNoDialog(self, "Are you sure?", "Are you sure you want to quit?")
-
-    def quit(self):
-        if self.warningBeforeQuit():
-            QtWidgets.qApp.quit()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:

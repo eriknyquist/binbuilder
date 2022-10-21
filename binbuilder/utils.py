@@ -54,3 +54,13 @@ def errorDialog(parent, heading="Error", message="Unrecoverable error occurred")
     msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
     msg.exec_()
 
+
+def yesNoDialog(parent, header="", message="Are you sure?"):
+    reply = QtWidgets.QMessageBox.question(parent, header, message,
+                                           (QtWidgets.QMessageBox.Yes |
+                                           QtWidgets.QMessageBox.No |
+                                           QtWidgets.QMessageBox.Cancel),
+                                           QtWidgets.QMessageBox.Cancel)
+
+    return reply == QtWidgets.QMessageBox.Yes
+
