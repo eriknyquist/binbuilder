@@ -17,7 +17,8 @@ excluded_binaries = [
     'Qt5WebSockets.dll',
     'Qt5DBus.dll',
     'Qt5QmlModels.dll',
-    'Qt5Svg.dll'
+    'Qt5Svg.dll',
+    'MSVCP140_1.dll'
 ]
 
 excluded_libnames = [
@@ -34,12 +35,15 @@ excluded_libnames = [
     'libvode-f2p',
     'libdqag',
     'liblbfgsb',
-    'libbanded'
+    'libbanded',
+    'api-ms-win-core',
+    'VCRUNTIME140'
 ]
 
 a = Analysis(['binbuilder\\__main__.py'],
              pathex=['binbuilder'],
              binaries=[],
+             datas=[('binbuilder\\images', 'images')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -63,6 +67,20 @@ def binfile_should_be_excluded(binfile):
 
 a.binaries = [x for x in a.binaries if not binfile_should_be_excluded(x[0])]
 
+# Single file build
+#exe = EXE(pyz,
+#          a.scripts,
+#          a.binaries,
+#          a.zipfiles,
+#          a.datas,
+#          name='BinBuilder',
+#          debug=False,
+#          strip=False,
+#          upx=True,
+#          runtime_tmpdir=None,
+#          console=False)
+
+# Multi-file build
 exe = EXE(pyz,
           a.scripts,
           [],

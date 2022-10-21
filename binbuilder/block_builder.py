@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
-from binbuilder.utils import truncate_string
+from binbuilder.utils import truncate_string, ICON_PATH
 from binbuilder.block import DataType, DATATYPES
 
 
@@ -69,7 +69,7 @@ class BlockBuilderDialog(QtWidgets.QDialog):
         self.mainLayout.addWidget(self.sizeLabel)
 
         self.setWindowTitle(f"Data block editor")
-        #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
+        self.setWindowIcon(QtGui.QIcon(ICON_PATH))
 
         self.update()
 

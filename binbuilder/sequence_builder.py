@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
 from binbuilder.block_builder import BlockBuilderDialog
-from binbuilder.utils import truncate_string, ScrollableTextDisplay, errorDialog
+from binbuilder.utils import truncate_string, ScrollableTextDisplay, errorDialog, ICON_PATH
 from binbuilder.block import Block, CodeWriter
 
 
@@ -69,7 +69,7 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.mainLayout.addLayout(self.tableLayout)
 
         self.setWindowTitle(f"Data item sequence '{self.sequence.name}'")
-        #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
+        self.setWindowIcon(QtGui.QIcon(ICON_PATH))
 
         self.update()
 

@@ -1,5 +1,17 @@
+import sys
+import os
+
 from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets, QtCore, QtGui
+
+
+if getattr(sys, 'frozen', False):
+    SOURCE_DIR = os.path.dirname(sys.executable)
+else:
+    SOURCE_DIR = os.path.dirname(__file__)
+
+IMAGE_DIR = os.path.join(SOURCE_DIR, 'images')
+ICON_PATH = os.path.join(IMAGE_DIR, 'icon.png')
 
 
 def truncate_string(s, max_len=24):
@@ -26,7 +38,7 @@ class ScrollableTextDisplay(QtWidgets.QDialog):
 
         self.setLayout(mainLayout)
         self.setWindowTitle(title)
-        #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
+        self.setWindowIcon(QtGui.QIcon(ICON_PATH))
 
     def sizeHint(self):
         return QtCore.QSize(600, 400)
@@ -38,7 +50,7 @@ def errorDialog(parent, heading="Error", message="Unrecoverable error occurred")
     msg.setText(heading)
     msg.setInformativeText(message)
     msg.setWindowTitle("Error")
-    #msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
+    msg.setWindowIcon(QtGui.QIcon(ICON_PATH))
     msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
     msg.exec_()
 

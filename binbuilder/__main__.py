@@ -6,6 +6,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 
 from binbuilder.main_widget import MainWidget
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
+from binbuilder.utils import ICON_PATH
 from binbuilder import __version__ as package_version
 
 
@@ -13,7 +14,7 @@ def textDisplayWindow(title, message):
     msg = QtWidgets.QMessageBox()
     msg.setInformativeText(message)
     msg.setWindowTitle(title)
-    #self.setWindowIcon(QtGui.QIcon(ICON_PATH))
+    self.setWindowIcon(QtGui.QIcon(ICON_PATH))
     msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
     msg.exec_()
 
@@ -26,8 +27,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initUi()
 
     def initUi(self):
-        #self.iconPath = ICON_PATH
-        #self.setWindowIcon(QtGui.QIcon(self.iconPath))
+        self.iconPath = ICON_PATH
+        self.setWindowIcon(QtGui.QIcon(self.iconPath))
 
         self.widget = MainWidget(self.primary_screen, self)
         self.setCentralWidget(self.widget)
