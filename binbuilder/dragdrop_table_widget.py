@@ -2,6 +2,7 @@ from PyQt5 import QtCore
 from PyQt5.QtGui import QDropEvent
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QTableWidgetItem, QWidget, QHBoxLayout, QApplication
 
+
 class DragDropTableWidget(QTableWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,7 +20,6 @@ class DragDropTableWidget(QTableWidget):
     def dropEvent(self, event: QDropEvent):
         if not event.isAccepted() and event.source() == self:
             drop_row = self.drop_on(event)
-            print("drop on %d" % drop_row)
 
             rows = sorted(set(item.row() for item in self.selectedItems()))
             rows_to_move = [[QTableWidgetItem(self.item(row_index, column_index)) for column_index in range(self.columnCount())]

@@ -101,6 +101,9 @@ class Block(object):
         self.value = default_value
         self.parameter = parameter
 
+    def copy(self):
+        return Block(self.typeinfo.datatype, self.name, self.value, self.parameter, self.varname_prefix)
+
     def set_name(self, name):
         self.name = name
         self.varname = self.varname_prefix + string_to_varname(name)
@@ -181,6 +184,10 @@ class BlockSequence(object):
         self.varname = None
         self.set_name(name)
 
+    def copy(self):
+        new_blocklist = [b.copy() for b in self.blocklist]
+        return BlockSequence(self.name, new_blocklist)
+
     def to_dict(self):
         return {"name": self.name, "blocks": [b.to_dict() for b in self.blocklist]}
 
@@ -231,7 +238,6 @@ class BlockSequence(object):
     def add_block(self, block):
         for b in self.blocklist:
             if block.varname == b.varname:
-                print(f"{block.varname} {b.varname}")
                 raise ValueError("This sequence already has a block with the same "
                                  "C variable name, please use a different name")
 
@@ -301,6 +307,10 @@ class Schema(CustomValue):
         self.sequencelist = sequencelist
         self.big_endian = big_endian
 
+    def copy(self):
+        new_seqs = [s.copy() for s in self.sequencelist]
+        return Schema(self.name, new_seqs, self.big_endian)
+
     def to_dict(self):
         return {"name": self.name, "big_endian": self.big_endian,
                 "sequences": [s.to_dict() for s in self.sequencelist]}
@@ -357,7 +367,6 @@ class Schema(CustomValue):
     def add_sequence(self, sequence):
         for s in self.sequencelist:
             if sequence.varname == s.varname:
-                print(f"{sequence.varname} {s.varname}")
                 raise ValueError("This schema already has a sequence with the same "
                                  "C variable name, please use a different name")
 

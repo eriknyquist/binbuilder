@@ -1,5 +1,6 @@
 import os
 
+from binbuilder.saved_sequence_browser import SavedSequenceBrowserDialog
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
 from binbuilder.block import Block, BlockSequence, DataType, Schema
 from binbuilder.sequence_builder import SequenceBuilderDialog
@@ -199,7 +200,12 @@ class MainWidget(QtWidgets.QDialog):
         dialog = SequenceBuilderDialog(self, seq)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
-        
+
+    def savedSequences(self):
+        dialog = SavedSequenceBrowserDialog(self)
+        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.exec_()
+
     def onDoubleClick(self, signal):
         self.editSequenceByRow(signal.row())
         self.update()

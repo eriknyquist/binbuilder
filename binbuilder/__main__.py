@@ -48,6 +48,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.loadSchemaAction.setStatusTip("Load saved schema from a file")
         self.loadSchemaAction.triggered.connect(self.widget.loadSchema)
 
+        self.savedSequencesAction = QtWidgets.QAction("Saved sequences", self)
+        self.savedSequencesAction.setShortcut("Ctrl+d")
+        self.savedSequencesAction.setStatusTip("View/edit saved sequences")
+        self.savedSequencesAction.triggered.connect(self.widget.savedSequences)
+
         self.darkThemeAction = QtWidgets.QAction("Dark theme", self)
         self.darkThemeAction.setShortcut("Ctrl+v")
         self.darkThemeAction.setStatusTip("Enable/disable dark theme")
@@ -61,6 +66,9 @@ class MainWindow(QtWidgets.QMainWindow):
         fileMenu.addAction(self.saveSchemaAction)
         fileMenu.addAction(self.loadSchemaAction)
         fileMenu.addAction(self.quitAction)
+
+        editMenu = menu.addMenu("Edit")
+        editMenu.addAction(self.savedSequencesAction)
 
         viewMenu = menu.addMenu("View")
         viewMenu.addAction(self.darkThemeAction)

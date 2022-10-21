@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+from binbuilder.saved_sequence_browser import add_saved_sequence
 from binbuilder.dragdrop_table_widget import DragDropTableWidget
 from binbuilder.block_builder import BlockBuilderDialog
 from binbuilder.utils import truncate_string, ScrollableTextDisplay, errorDialog, ICON_PATH
@@ -157,7 +158,12 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         self.update()
 
     def saveButtonClicked(self):
-        pass
+        self.sequence.set_name(self.nameInput.text())
+        self.reorder_sequence_by_table()
+        saved_sequence = self.sequence.copy()
+        success = add_saved_sequence(saved_sequence)
+        if not success:
+            errorDialog(self, message="You already have a saved sequence with this name")
 
     def update(self):
         self.populateTable()
