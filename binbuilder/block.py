@@ -3,6 +3,8 @@ import struct
 
 from versionedobj import CustomValue
 
+DEFAULT_BLOCK_COLOR = (85, 85, 127)
+
 
 class DataType(object):
     """
@@ -88,7 +90,8 @@ class Block(object):
     """
     Represents a single data field of a particular atomic data type
     """
-    def __init__(self, datatype=DataType.UINT_4B, name="", default_value=0, parameter=None, varname_prefix=''):
+    def __init__(self, datatype=DataType.UINT_4B, name="", default_value=0, parameter=None,
+                 varname_prefix='', color=DEFAULT_BLOCK_COLOR):
         self.typeinfo = None
         self.set_type(datatype)
 
@@ -100,6 +103,27 @@ class Block(object):
         self.varname_prefix = varname_prefix
         self.value = default_value
         self.parameter = parameter
+
+        self.color = color
+
+    def emit_data(self, big_endian=False):
+        if DataType.BYTES == self.typeinfo.datatype:
+            return struct.pack(f"s{self.size_bytes()}", self.value)
+
+        end = ">" if big_endian else "<"
+        return struct.pack(end + self.typeinfo.pystruct_name, self.value)
+
+    def load_data(self, data, big_endian=False):
+        size = self.size_bytes()
+        sub_data = data[:size]
+
+        if DataType.BYTES == self.typeinfo.datatype:
+            self.value = sub_data
+        else:
+            end = ">" if big_endian else "<"
+            self.value = struct.unpack(end + self.pystruct_name)[0]
+
+        return data[size:]
 
     def copy(self):
         return Block(self.typeinfo.datatype, self.name, self.value, self.parameter, self.varname_prefix)
@@ -147,7 +171,7 @@ class Block(object):
             value = self.value
 
         return {"type": self.typeinfo.datatype, "name": self.name,
-                "var_prefix": self.varname_prefix, "value": value}
+                "var_prefix": self.varname_prefix, "value": value, "color": self.color}
 
     @classmethod
     def from_dict(cls, attrs):
@@ -155,6 +179,7 @@ class Block(object):
         name = attrs["name"]
         var_prefix = attrs["var_prefix"]
         value = attrs["value"]
+        color = tuple(attrs["color"])
 
         if DataType.BYTES == datatype:
             value = base64.b64decode(bytes(value, 'UTF-8'))
@@ -162,14 +187,14 @@ class Block(object):
         else:
             param = None
 
-        return Block(datatype, name, value, parameter=param, varname_prefix=var_prefix)
+        return Block(datatype, name, value, parameter=param, varname_prefix=var_prefix, color=color)
 
 
 class BlockSequence(object):
     """
     Represents a sequence of data fields, containing multiple Block objects
     """
-    def __init__(self, name, blocklist=[]):
+    def __init__(self, name, blocklist=[], color=DEFAULT_BLOCK_COLOR):
         # Check blocklist for dupe var names
         names = {}
         for b in blocklist:
@@ -183,19 +208,39 @@ class BlockSequence(object):
         self.name = None
         self.varname = None
         self.set_name(name)
+        self.color = color
+
+    def emit_data(self, big_endian):
+        ret = b""
+
+        for b in self.blocklist:
+            ret += b.emit_data(big_endian)
+
+        return ret
+
+    def load_data(self, data, big_endian=False):
+        remaining = data
+        for b in self.blocklist:
+            if not remaining:
+                raise ValueError("Not enough data provided for this sequence")
+
+            remaining = b.load_data(remaining, big_endian)
+
+        return remaining
 
     def copy(self):
         new_blocklist = [b.copy() for b in self.blocklist]
         return BlockSequence(self.name, new_blocklist)
 
     def to_dict(self):
-        return {"name": self.name, "blocks": [b.to_dict() for b in self.blocklist]}
+        return {"name": self.name, "color": self.color, "blocks": [b.to_dict() for b in self.blocklist]}
 
     @classmethod
     def from_dict(cls, attrs):
         name = attrs["name"]
+        color = tuple(attrs["color"])
         blocks = [Block.from_dict(d) for d in attrs["blocks"]]
-        return BlockSequence(name, blocks)
+        return BlockSequence(name, blocks, color)
 
     def set_name(self, name):
         self.name = name
@@ -306,6 +351,24 @@ class Schema(CustomValue):
         self.name = name
         self.sequencelist = sequencelist
         self.big_endian = big_endian
+
+    def emit_data(self):
+        ret = b''
+        for s in self.sequencelist:
+            ret += s.emit_data(self.big_endian)
+
+        return ret
+
+    def load_data(self, data):
+        remaining = data
+        for s in self.sequencelist:
+            if not remaining:
+                raise ValueError("Not enough data provided for this schema")
+
+            remaining = s.load_data(remaining, big_endian)
+
+        if remaining:
+            raise ValueError("Too much data provided for this schema")
 
     def copy(self):
         new_seqs = [s.copy() for s in self.sequencelist]

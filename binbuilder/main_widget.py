@@ -150,6 +150,10 @@ class MainWidget(QtWidgets.QDialog):
             return
 
         self.editSequenceByRow(rows[0].row())
+
+    def removeSequenceByRow(self, row):
+        seq_name = self.table.item(row, 0).text()
+        self.current_schema.remove_sequence_by_name(seq_name)
         self.update()
 
     def removeButtonClicked(self):
@@ -158,9 +162,7 @@ class MainWidget(QtWidgets.QDialog):
             errorDialog(self, message="No sequence is selected")
             return
 
-        seq_name = self.table.item(rows[0].row(), 0).text()
-        self.current_schema.remove_sequence_by_name(seq_name)
-        self.update()
+        self.removeSequenceByRow(rows[0].row())
 
     def reorder_schema_by_table(self):
         names = []
@@ -178,6 +180,9 @@ class MainWidget(QtWidgets.QDialog):
 
         item2.setTextAlignment(QtCore.Qt.AlignVCenter)
         item2.setTextAlignment(QtCore.Qt.AlignHCenter)
+
+        item1.setBackground(QtGui.QColor(*sequence.color))
+        item2.setBackground(QtGui.QColor(*sequence.color))
 
         self.table.setItem(nextFreeRow, 0, item1)
         self.table.setItem(nextFreeRow, 1, item2)
@@ -205,14 +210,50 @@ class MainWidget(QtWidgets.QDialog):
         dialog = SavedSequenceBrowserDialog(self)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
+        self.update()
 
     def onDoubleClick(self, signal):
         self.editSequenceByRow(signal.row())
-        self.update()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
             self.quit()
+
+    def setRowColor(self, row):
+        color = QtWidgets.QColorDialog.getColor()
+
+        # Set new color in table
+        for i in range(self.table.columnCount()):
+            item = self.table.item(row, i)
+            item.setBackground(color)
+
+        block_name = self.table.item(row, 0).text()
+        block = self.current_schema.get_sequence_by_name(block_name)
+        block.color = (color.red(), color.green(), color.blue())
+        self.table.clearSelection()
+
+    def contextMenuEvent(self, pos):
+        indexes = self.table.selectionModel().selection().indexes()
+        if not indexes:
+            return
+
+        row = indexes[0].row()
+
+        menu = QtWidgets.QMenu(self)
+
+        colorAction = QtWidgets.QAction('Color...', self)
+        colorAction.triggered.connect(lambda: self.setRowColor(row))
+        menu.addAction(colorAction)
+
+        editAction = QtWidgets.QAction('Edit item...', self)
+        editAction.triggered.connect(lambda: self.editSequenceByRow(row))
+        menu.addAction(editAction)
+
+        deleteAction = QtWidgets.QAction('Delete item...', self)
+        deleteAction.triggered.connect(lambda: self.removeSequenceByRow(row))
+        menu.addAction(deleteAction)
+
+        menu.popup(QtGui.QCursor.pos())
 
     def sizeHint(self):
         return QtCore.QSize(800, 600)

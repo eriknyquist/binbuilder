@@ -88,6 +88,9 @@ class SavedSequenceBrowserDialog(QtWidgets.QDialog):
         item2.setTextAlignment(QtCore.Qt.AlignVCenter)
         item2.setTextAlignment(QtCore.Qt.AlignHCenter)
 
+        item1.setBackground(QtGui.QColor(*sequence.color))
+        item2.setBackground(QtGui.QColor(*sequence.color))
+
         self.table.setItem(nextFreeRow, 0, item1)
         self.table.setItem(nextFreeRow, 1, item2)
 

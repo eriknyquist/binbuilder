@@ -74,15 +74,18 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
 
         self.update()
 
+    def removeItemByRow(self, row):
+        block_name = self.table.item(row, 0).text()
+        self.sequence.remove_block_by_name(block_name)
+        self.update()
+
     def removeButtonClicked(self):
         rows = self.table.selectionModel().selectedRows()
         if not rows:
             errorDialog(self, message="No data item is selected")
             return
 
-        block_name = self.table.item(rows[0].row(), 0).text()
-        self.sequence.remove_block_by_name(block_name)
-        self.update()
+        seld.removeItemByRow(rows[0].row())
 
     def editButtonClicked(self):
         rows = self.table.selectionModel().selectedRows()
@@ -91,7 +94,6 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
             return
 
         self.editItemByRow(rows[0].row())
-        self.update()
 
     def closeEvent(self, event):
         self.sequence.set_name(self.nameInput.text())
@@ -117,6 +119,42 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
                                        writer.generate_pystruct_fmtstring(self.sequence))
         dialog.exec_()
 
+    def contextMenuEvent(self, pos):
+        indexes = self.table.selectionModel().selection().indexes()
+        if not indexes:
+            return
+
+        row = indexes[0].row()
+
+        menu = QtWidgets.QMenu(self)
+
+        colorAction = QtWidgets.QAction('Color...', self)
+        colorAction.triggered.connect(lambda: self.setRowColor(row))
+        menu.addAction(colorAction)
+
+        editAction = QtWidgets.QAction('Edit item...', self)
+        editAction.triggered.connect(lambda: self.editItemByRow(row))
+        menu.addAction(editAction)
+
+        deleteAction = QtWidgets.QAction('Delete item...', self)
+        deleteAction.triggered.connect(lambda: self.removeItemByRow(row))
+        menu.addAction(deleteAction)
+
+        menu.popup(QtGui.QCursor.pos())
+
+    def setRowColor(self, row):
+        color = QtWidgets.QColorDialog.getColor()
+
+        # Set new color in table
+        for i in range(self.table.columnCount()):
+            item = self.table.item(row, i)
+            item.setBackground(color)
+
+        block_name = self.table.item(row, 0).text()
+        block = self.sequence.get_block_by_name(block_name)
+        block.color = (color.red(), color.green(), color.blue())
+        self.table.clearSelection()
+
     def addRow(self, block):
         nextFreeRow = self.table.rowCount()
         self.table.insertRow(nextFreeRow)
@@ -128,6 +166,11 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
 
         item3.setTextAlignment(Qt.AlignHCenter)
         item3.setTextAlignment(Qt.AlignVCenter)
+
+        item1.setBackground(QtGui.QColor(*block.color))
+        item2.setBackground(QtGui.QColor(*block.color))
+        item3.setBackground(QtGui.QColor(*block.color))
+        item4.setBackground(QtGui.QColor(*block.color))
 
         self.table.setItem(nextFreeRow, 0, item1)
         self.table.setItem(nextFreeRow, 1, item2)
@@ -177,6 +220,7 @@ class SequenceBuilderDialog(QtWidgets.QDialog):
         dialog = BlockBuilderDialog(self, block)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.exec_()
+        self.update()
 
     def onDoubleClick(self, signal):
         self.editItemByRow(signal.row())
